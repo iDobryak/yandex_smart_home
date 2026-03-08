@@ -8,7 +8,7 @@ from custom_components.yandex_smart_home.schema.capability_mode import *
 
 
 def test_devices_action_request() -> None:
-    request = ActionRequest.parse_raw(load_fixture("devices_action.json"))
+    request = ActionRequest.model_validate_json(load_fixture("devices_action.json"))
     assert len(request.payload.devices) == 1
     assert len(request.payload.devices[0].capabilities) == 10
 
@@ -52,7 +52,7 @@ def test_devices_action_request() -> None:
 
 
 def test_devices_action_request_vk() -> None:
-    request = ActionRequest.parse_raw(load_fixture("devices_action_vk.json"))
+    request = ActionRequest.model_validate_json(load_fixture("devices_action_vk.json"))
     assert len(request.payload.devices) == 1
     assert len(request.payload.devices[0].capabilities) == 1
 

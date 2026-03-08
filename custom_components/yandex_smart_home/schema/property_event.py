@@ -4,9 +4,9 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/event.html
 """
 
 from enum import StrEnum
-from typing import Any, Generic, Literal, TypeVar
+from typing import Generic, Literal, Self, TypeVar
 
-from pydantic.v1 import validator
+from pydantic import Field, model_validator
 
 from .base import GenericAPIModel
 
@@ -139,16 +139,15 @@ class EventPropertyParameters(GenericAPIModel, Generic[EventInstanceEventT]):
     """Parameters of an event property."""
 
     instance: EventPropertyInstance
-    events: list[dict[Literal["value"], EventInstanceEventT]] = []
+    events: list[dict[Literal["value"], EventInstanceEventT]] = Field(default_factory=list)
 
-    @validator("events", pre=True, always=True)
-    def set_events(cls, v: Any) -> Any:
+    @model_validator(mode="after")
+    def set_events(self) -> Self:
         """Update events list value."""
-        if not v:
-            instance_event: type[EventInstanceEventT] = cls.__fields__["events"].type_.__args__[1]
-            return [{"value": m} for m in instance_event.__members__.values()]
+        if not self.events:
+            self.events = [{"value": m} for m in get_supported_events_for_instance(self.instance)]
 
-        return v  # pragma: nocover
+        return self  # pragma: nocover
 
 
 class VibrationEventPropertyParameters(EventPropertyParameters[VibrationInstanceEvent]):

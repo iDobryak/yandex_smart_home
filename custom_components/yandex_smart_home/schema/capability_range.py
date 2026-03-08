@@ -4,9 +4,9 @@ https://yandex.ru/dev/dialogs/smart-home/doc/concepts/range.html
 """
 
 from enum import StrEnum
-from typing import Any
+from typing import Any, Self
 
-from pydantic.v1 import root_validator, validator
+from pydantic import field_validator, model_validator
 
 from .base import APIModel
 
@@ -51,27 +51,26 @@ class RangeCapabilityParameters(APIModel):
     random_access: bool
     range: RangeCapabilityRange | None = None
 
-    @root_validator
-    def compute_unit(cls, values: dict[str, Any]) -> dict[str, Any]:
+    @model_validator(mode="after")
+    def compute_unit(self) -> Self:
         """Return value unit for a capability instance."""
-        match values.get("instance"):
+        match self.instance:
             case RangeCapabilityInstance.BRIGHTNESS:
-                values["unit"] = RangeCapabilityUnit.PERCENT
+                self.unit = RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.HUMIDITY:
-                values["unit"] = RangeCapabilityUnit.PERCENT
+                self.unit = RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.OPEN:
-                values["unit"] = RangeCapabilityUnit.PERCENT
+                self.unit = RangeCapabilityUnit.PERCENT
             case RangeCapabilityInstance.TEMPERATURE:
-                values["unit"] = RangeCapabilityUnit.TEMPERATURE_CELSIUS
+                self.unit = RangeCapabilityUnit.TEMPERATURE_CELSIUS
 
-        return values
+        return self
 
-    @root_validator
-    def validate_range(cls, values: dict[str, Any]) -> dict[str, Any]:
+    @model_validator(mode="after")
+    def validate_range(self) -> Self:
         """Force range boundaries for a capability instance."""
-
-        instance: RangeCapabilityInstance | None = values.get("instance")
-        r: RangeCapabilityRange | None = values.get("range")
+        instance: RangeCapabilityInstance = self.instance
+        r: RangeCapabilityRange | None = self.range
 
         if r:
             match instance:
@@ -90,7 +89,7 @@ class RangeCapabilityParameters(APIModel):
             ):
                 raise ValueError(f"range field required for {instance}")
 
-        return values
+        return self
 
 
 class RangeCapabilityInstanceActionState(APIModel):
@@ -100,7 +99,8 @@ class RangeCapabilityInstanceActionState(APIModel):
     value: float
     relative: bool = False
 
-    @validator("relative", pre=True, always=True)
+    @field_validator("relative", mode="before")
+    @classmethod
     def set_relative(cls, v: Any) -> Any:
         """Update relative value."""
         if v is None:  # VK

@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from pydantic.v1 import BaseModel
-from pydantic.v1.generics import GenericModel
+from pydantic import BaseModel
 
 
 class APIModel(BaseModel):
@@ -11,12 +10,19 @@ class APIModel(BaseModel):
 
     def as_json(self) -> str:
         """Generate a JSON representation of the model."""
-        return super().json(exclude_none=True, ensure_ascii=False)
+        return self.model_dump_json(exclude_none=True, serialize_as_any=True)
 
     def as_dict(self) -> dict[str, Any]:
         """Generate a dictionary representation of the model."""
-        return super().dict(exclude_none=True)
+        return self.model_dump(exclude_none=True, serialize_as_any=True)
+
+    def __eq__(self, other: object) -> bool:
+        """Keep compatibility with pydantic v1 model-to-dict comparisons."""
+        if isinstance(other, dict):
+            return self.model_dump() == other
+
+        return super().__eq__(other)
 
 
-class GenericAPIModel(GenericModel, APIModel):
+class GenericAPIModel(APIModel):
     """Base generic API response model."""
